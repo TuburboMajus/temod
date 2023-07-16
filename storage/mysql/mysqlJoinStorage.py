@@ -143,7 +143,7 @@ class MysqlJoinStorage(MysqlStorage):
 
 		query = f"""
 			SELECT {self._build_selection(entities)} 
-			FROM {getattr(list_[0],'ENTITY',list_[0].__name__)} {self._build_join(list_[1:])}
+			FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}
 		"""
 		if condition is not None:
 			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
@@ -169,7 +169,7 @@ class MysqlJoinStorage(MysqlStorage):
 
 		query = f"""
 			SELECT {self._build_selection(entities)} 
-			FROM {getattr(list_[0],'ENTITY',list_[0].__name__)} {self._build_join(list_[1:])}
+			FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}
 		"""
 		if condition is not None:
 			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
@@ -206,7 +206,7 @@ class MysqlJoinStorage(MysqlStorage):
 
 		query = f"""
 			SELECT {self._build_selection(entities)} 
-			FROM {getattr(list_[0],'ENTITY',list_[0].__name__)} {self._build_join(list_[1:])}
+			FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}
 		"""
 
 		if condition is not None:

@@ -2,7 +2,7 @@ from mysql.connector.errors import OperationalError
 import mysql.connector
 
 class MysqlStorage():
-	def __init__(self, user="",password="",host="",port=3306,database="",connexion=None):
+	def __init__(self, user="",password="",host="",port=3306,database="",connexion=None,auth_plugin='mysql_native_password'):
 		super(MysqlStorage, self).__init__()
 		self.connexion = connexion
 		self.credentials = {
@@ -10,7 +10,8 @@ class MysqlStorage():
 			"password":password,
 			"host":host,
 			"port":port,
-			"database":database
+			"database":database,
+			"auth_plugin":auth_plugin
 		}
 
 	def connect(self,force=False):

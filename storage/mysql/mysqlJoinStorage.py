@@ -235,7 +235,7 @@ class MysqlJoinStorage(MysqlStorage):
 		if any([not hasattr(entity,"snapshot") for entity in join.entities.values()]):
 			raise EntitySnapshotException(f"No snapshot to recover data from enitiy {[not hasattr(entity,'snapshot') for entity in join.entities.values()][0]}")
 
-		return [MysqlEntityStorage(type(entity)).updateOnSnapshot(entity,updateID=updateID) for entity in join.entities.values()]
+		return [MysqlEntityStorage(type(entity),**self.credentials,connexion=self.connexion).updateOnSnapshot(entity,updateID=updateID) for entity in join.entities.values()]
 		
 	##############################################
 

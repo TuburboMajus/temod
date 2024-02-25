@@ -43,8 +43,6 @@ class InfluxStorage(object):
 			|> filter(fn: (r) => {condition})
 			|> first()
 		"""
-		print(query)
-		print(qa)
 
 	def getMany(self,bucket,range_,fields=None,condition=None,skip=None,orderby=None,limit=None,selectors=None,aggregations=None):
 		qa = self.client.query_api()
@@ -69,7 +67,6 @@ class InfluxStorage(object):
 			aggregations = []
 		for aggregation in aggregations:
 			query += f"""|> {aggregation}"""
-		print(query)
 		for r in qa.query_stream(org=self.org,query=query.strip()):
 			yield r
 

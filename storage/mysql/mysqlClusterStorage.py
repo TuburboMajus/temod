@@ -46,7 +46,6 @@ class MysqlClusterStorage(MysqlStorage):
 	# VERIFICATIONS
 
 	def verify_entries(self,entries):
-		print('entries',entries)
 		try:
 			assert(all([
 				issubclass(type(entry),Attribute) or issubclass(type(entry),Condition) 
@@ -125,7 +124,6 @@ class MysqlClusterStorage(MysqlStorage):
 			if graph.nodes[target]['__queried']:
 				continue
 			new_condition = link['condition'](queried)
-			print(f'Filling node by {target}, {link}')
 			self._fill_node(
 				graph,target,new_condition,orderby=link.get('orderby',None),skip=link.get('skip',None),limit=link.get('limit',None),
 				one=not link.get('one_to_many',False)

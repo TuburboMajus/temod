@@ -89,9 +89,7 @@ class MysqlEntityStorage(MysqlStorage):
 		]
 
 	def _build_condition(self,*entries,**kwargs):
-		print("verifiying entries")
 		self._verify_entries(entries)
-		print("verified entries")
 
 		attributes = self._build_attributes(**kwargs)
 		for attribute in entries:
@@ -207,7 +205,6 @@ class MysqlEntityStorage(MysqlStorage):
 			query += f" SKIP {skip}"
 		if limit is not None:
 			query += f" LIMIT {limit}"
-		print(query)
 		return self.executeAndCommit(query).lastrowid
 
 	def list(self,*conditions,orderby=None,skip=None,limit=None,**kwargs):

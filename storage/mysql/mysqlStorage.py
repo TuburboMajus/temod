@@ -16,7 +16,6 @@ class MysqlStorage():
 
 	def connect(self,force=False):
 		if(self.connexion is not None and not force):
-			print(self.connexion.in_transaction)
 			return self.connexion
 		self.connexion = mysql.connector.connect(**self.credentials)
 		return self.connexion
@@ -34,9 +33,7 @@ class MysqlStorage():
 			return self.connect(force=True).cursor()
 
 	def executeAndCommit(self,query):
-		print(query)
 		cursor = self.cursor()
-		print(dir(self.cursor))
 		try:
 			cursor.execute(query)
 			self.connexion.commit()
@@ -50,9 +47,7 @@ class MysqlStorage():
 
 	def getOne(self,query):
 		cursor=self.cursor()
-		print(dir(self.cursor))
 		self.connexion.commit()
-		print(query)
 		try:
 			query=(query)
 			cursor.execute(query)
@@ -68,9 +63,7 @@ class MysqlStorage():
 		self.close()
 
 	def getMany(self,query):
-		print(query)
 		cursor=self.cursor()
-		print(dir(self.cursor))
 		try:
 			cursor.execute(query)
 			columns = cursor.column_names

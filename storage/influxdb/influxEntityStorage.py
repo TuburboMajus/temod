@@ -64,8 +64,6 @@ class InfluxEntityStorage(InfluxStorage):
 		if not issubclass(self.entity_attributes[self.timer]['type'],ClockAttribute):
 			raise EntityStorageException(f"InfluxEntityStorage measurement attribute must be of type/subtype of ClockAttribute not {self.entity_attributes[self.measurement]['type']} (measurement: {self.measurement})")
 
-		print("timer is: ",self.timer)
-
 		fields = [] if fields is None else list(fields);tags = [] if tags is None else list(tags);
 		self.fields = []; self.tags = [];
 		for attr,params in self.entity_attributes.items():
@@ -75,10 +73,8 @@ class InfluxEntityStorage(InfluxStorage):
 				if not issubclass(params['type'],NumericAttribute):
 					raise EntityStorageException(f"InfluxEntityStorage field attributes must be of type/subtype of NumericAttribute not {self.entity_attributes[self.measurement]['type']} (field: {attr})")
 				self.fields.append(attr)
-				print(attr,"set as field")
 			elif attr in tags:
 				self.tags.append(attr)
-				print(attr,"set as tag")
 			else:
 				if issubclass(params['type'],NumericAttribute):
 					self.fields.append(attr);print(attr,"set as field");continue
@@ -232,7 +228,6 @@ class InfluxEntityStorage(InfluxStorage):
 		where = ""
 		if condition is not None:
 			where = InfluxConditionsTranslator.translate(condition,measurement=self.measurement)
-		print('where',where)
 
 		for row in self.getMany(self.entity_name,range_,fields=self.fields,condition=where,orderby=orderby,skip=skip,limit=limit):
 			yield self.entity_generator(row.values)
@@ -256,5 +251,4 @@ class InfluxEntityStorage(InfluxStorage):
 				self.entity_name,range_,condition=where,orderby=orderby,
 				skip=skip,limit=limit,selectors=selectors,aggregations=aggregations
 			):
-			print(row.values)
 			yield self.entity_generator(row.values,set_field=True)

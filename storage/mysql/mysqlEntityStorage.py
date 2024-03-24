@@ -47,11 +47,11 @@ class MysqlEntityStorage(MysqlStorage):
 	def entity_generator(self,dct,copy=False):
 		dct = deepcopy(dct) if copy else dct
 		return self.entity_type(*[
-			attr['type'](n,value=dct.pop(n),**{a:b for a,b in attr.items() if not (a in ['type','required'])}) 
+			attr['type'](n,value=attr['type'].decode(dct.pop(n)),**{a:b for a,b in attr.items() if not (a in ['type','required'])}) 
 			for n,attr in self.entity_attributes.items()
 			if attr.get('required',False)
 		],*[
-			attr['type'](n,value=dct.pop(n,None),**{a:b for a,b in attr.items() if not (a in ['type','required'])}) 
+			attr['type'](n,value=attr['type'].decode(dct.pop(n,None)),**{a:b for a,b in attr.items() if not (a in ['type','required'])}) 
 			for n,attr in self.entity_attributes.items()
 			if not attr.get('required',False)
 		])
@@ -84,7 +84,9 @@ class MysqlEntityStorage(MysqlStorage):
 
 	def _build_attributes(self,**attributes):
 		return [
-			self.entity_attributes[i]['type'](i,value=j,owner_name=self.entity_name)
+			self.entity_attributes[i]['type'](i,value=j,owner_name=self.entity_name,**{
+				a:b for a,b in self.entity_attributes[i].items() if not( a in ['type',"required","no_check",'name','owner_name','value'] )
+			},no_check=True)
 			for i,j in attributes.items()
 		]
 

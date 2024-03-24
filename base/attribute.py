@@ -43,6 +43,9 @@ class Attribute(object):
 		if self.value is not None and not issubclass(type(self.value),self.value_type):
 			raise WrongTypeError(self,f"Wrong value type {type(self.value).__name__} for {type(self).__name__} (attribute: {self.name})")
 
+	def decode(x):
+		return x
+		
 
 class StringAttribute(Attribute):
 	"""docstring for StringAttribute"""
@@ -118,8 +121,6 @@ class UUID4Attribute(StringAttribute):
 class UTF8BASE64Attribute(StringAttribute):
 	"""docstring for UTF8BASE64Attribute"""
 	def __init__(self, *args, **kwargs):
-		force_lower_case = kwargs.pop('force_lower_case',False)
-		kwargs['force_cast'] = kwargs.get('force_cast',lambda x:UTF8BASE64Attribute.decode(x,force_lower_case=force_lower_case))
 		super(UTF8BASE64Attribute, self).__init__(*args, force_lower_case=force_lower_case, **kwargs)
 		self.check_value()
 
@@ -130,13 +131,10 @@ class UTF8BASE64Attribute(StringAttribute):
 			self.value = value
 		self.check_value()
 
-	def decode(x,force_lower_case=False):
-		try:
-			return base64.b64decode(x).decode('utf-8')
-		except:
-			if force_lower_case and x is not None:
-				return x.lower()
-			return x
+	def decode(x):
+		if x is None:
+			return 
+		return base64.b64decode(x).decode('utf-8')
 
 
 class NumericAttribute(Attribute):

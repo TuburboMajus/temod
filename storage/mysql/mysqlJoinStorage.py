@@ -41,11 +41,11 @@ class MysqlJoinStorage(MysqlStorage):
 	def _entity_gen(entity_type,dct,copy=False):
 		dct = deepcopy(dct) if copy else dct
 		return entity_type(*[
-			attr['type'](attr['name'],value=dct.pop(attr['name']),**{a:b for a,b in attr.items() if not (a in ['name','type','required'])}) 
+			attr['type'](attr['name'],value=attr['type'].decode(dct.pop(attr['name'])),**{a:b for a,b in attr.items() if not (a in ['name','type','required'])}) 
 			for attr in entity_type.ATTRIBUTES 
 			if attr.get('required',False)
 		],*[
-			attr['type'](attr['name'],value=dct.pop(attr['name'],None),**{a:b for a,b in attr.items() if not (a in ['name','type','required'])}) 
+			attr['type'](attr['name'],value=attr['type'].decode(dct.pop(attr['name'],None)),**{a:b for a,b in attr.items() if not (a in ['name','type','required'])}) 
 			for attr in entity_type.ATTRIBUTES 
 			if not attr.get('required',False)
 		])
@@ -85,10 +85,13 @@ class MysqlJoinStorage(MysqlStorage):
 
 	def _build_attributes(self,class_,**attributes):
 		try:
-			return [
-				[attr for attr in class_.ATTRIBUTES if attr['name'] == i][0]['type'](i,value=j,owner_name=class_.ENTITY_NAME)
-				for i,j in attributes.items()
-			]
+			attrs = []
+			for i,j in attributes.items():
+				ar = [attr for attr in class_.ATTRIBUTES if attr['name'] == i][0]
+				attrs.append(ar['type'](i,value=j,owner_name=class_.ENTITY_NAME, **{
+					a:b for a,b in ar.items() if not (a in ['type','required','no_check','name','owner_name','value'])
+				},no_check=True))
+			return attrs
 		except IndexError as e:
 			absent = [attr for attr in attributes if not(attr in [a['name'] for a in class_.ATTRIBUTES])]
 			raise JoinException(f"Entity {class_.ENTITY_NAME} does not have following attributes: {','.join(absent)}")

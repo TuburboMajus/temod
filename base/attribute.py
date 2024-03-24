@@ -45,7 +45,7 @@ class Attribute(object):
 
 	def decode(x):
 		return x
-		
+
 
 class StringAttribute(Attribute):
 	"""docstring for StringAttribute"""
@@ -121,14 +121,7 @@ class UUID4Attribute(StringAttribute):
 class UTF8BASE64Attribute(StringAttribute):
 	"""docstring for UTF8BASE64Attribute"""
 	def __init__(self, *args, **kwargs):
-		super(UTF8BASE64Attribute, self).__init__(*args, force_lower_case=force_lower_case, **kwargs)
-		self.check_value()
-
-	def set_value(self,value):
-		if self.force_lower_case and value is not None:
-			self.value = value.lower()
-		else:
-			self.value = value
+		super(UTF8BASE64Attribute, self).__init__(*args, **kwargs)
 		self.check_value()
 
 	def decode(x):

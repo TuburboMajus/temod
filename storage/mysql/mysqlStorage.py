@@ -1,4 +1,3 @@
-from mysql.connector.errors import OperationalError
 import mysql.connector
 
 class MysqlStorage():
@@ -29,7 +28,7 @@ class MysqlStorage():
 	def cursor(self):
 		try:
 			return self.connect().cursor()
-		except OperationalError:
+		except:
 			return self.connect(force=True).cursor()
 
 	def executeAndCommit(self,query):

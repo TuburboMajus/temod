@@ -195,12 +195,15 @@ class MysqlEntityStorage(MysqlStorage):
 		except:
 			raise EntityStorageException("At least one attribute to update is necessary")
 		if type(updates) is dict:
-			updates = [
+			attributes = [
 				attr['type'](name,value=updates[name],**{k:v for k,v in attr.items() if not k in ['type','required']})
 				for name,attr in self.entity_attributes.items() if name in updates
 			]
-		toUpdate = [Equals(update) if not issubclass(type(update),Equals) else update for update in updates]
-		query = f"UPDATE {self.entity_name} SET {','.join([MysqlAttributesTranslator.translate(update) for update in toUpdate])}"
+		elif issubclass(type(updates),Attribute):
+			attributes = [updates]
+		else:
+			raise Exception("Updates must be a dict or an Attribute")
+		query = f"UPDATE {self.entity_name} SET {','.join([attribute.name+' = '+MysqlAttributesTranslator.translate(attribute) for attribute in attributes])}"
 		if condition is not None:
 			query +=  f" WHERE {MysqlConditionsTranslator.translate(condition)}"
 		if skip is not None:

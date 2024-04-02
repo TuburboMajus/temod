@@ -188,7 +188,7 @@ class MysqlEntityStorage(MysqlStorage):
 
 		return self.executeAndCommit(query).lastrowid
 
-	def update(self,*conditions,limit=None,skip=None,updateID=False,**kwargs):
+	def update(self,updates,*conditions,limit=None,skip=None,updateID=False,**kwargs):
 		condition = self._build_condition(*conditions,**kwargs)
 		try:
 			assert(updates is not None and len(updates) > 0)

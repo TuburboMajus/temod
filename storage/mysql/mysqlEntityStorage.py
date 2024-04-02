@@ -200,7 +200,7 @@ class MysqlEntityStorage(MysqlStorage):
 				for name,attr in self.entity_attributes.items() if name in updates
 			]
 		toUpdate = [Equals(update) if not issubclass(type(update),Equals) else update for update in updates]
-		query = f"UPDATE {self.entity_name} SET {','.join([MysqlAttributeTranslator.translate(update) for update in toUpdate])}"
+		query = f"UPDATE {self.entity_name} SET {','.join([MysqlAttributesTranslator.translate(update) for update in toUpdate])}"
 		if condition is not None:
 			query +=  f" WHERE {MysqlConditionsTranslator.translate(condition)}"
 		if skip is not None:

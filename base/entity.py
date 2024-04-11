@@ -1,14 +1,13 @@
 from .attribute import Attribute
 
+class DuplicateNameError(Exception):
+	pass
+
 class MalformedEntityException(Exception):
-	"""docstring for MalformedEntityException"""
-	def __init__(self, *args, **kwargs):
-		super(MalformedEntityException, self).__init__(*args, **kwargs)
+	pass
 
 class MissingRequiredAttributeError(Exception):
-	"""docstring for MissingRequiredAttributeError"""
-	def __init__(self, *args, **kwargs):
-		super(MissingRequiredAttributeError, self).__init__(*args, **kwargs)
+	pass
 
 
 class Entity(object):
@@ -16,6 +15,7 @@ class Entity(object):
 	def __init__(self, *attributes,**kwargs):
 		super(Entity, self).__init__()
 		self.attributes = {}
+		self.complements = {}
 		self.snapshot = None
 		for i,attribute in enumerate(attributes):
 			if issubclass(type(attribute),Attribute):
@@ -53,8 +53,37 @@ class Entity(object):
 		for k,v in kwargs.items():
 			self.attributes[k].set_value(v)
 
+	def setInfo(self, info: str, value):
+		if info in self.attributes:
+			raise DuplicateNameError("Complementary infos cannot share names with base attributes.")
+		self.complements[info] = value
+
+	def setInfos(self, **complements):
+		for complement, value in complements.items():
+			self.setInfo(complement, value)
+
+	def scalarizeInfo(self, value, complements=False):
+		if value is None:
+			return None
+		if(type(value) in [dict, str, int, float, bool]):
+			return value
+		if type(value) in [list, set]:
+			return [self.scalarizeInfo(element, complements=complements) for element in value]
+		if (issubclass(type(value), Attribute)):
+			return value.to_scalar()
+		if (issubclass(type(value), Entity)):
+			return value.to_dict(complements=complements)
+		raise Exception(f"Cannot scalarize info of type {type(value)}")
+
 	def __getitem__(self,name):
-		return self.attributes[name].value
+		try:
+			return self.attributes[name].value
+		except Exception as e:
+			try:
+				return self.complements[name]
+			except:
+				pass
+			raise e
 
 	def __setitem__(self,name,value): 
 		return self.setAttribute(name,value)
@@ -70,11 +99,17 @@ class Entity(object):
 
 	#####################################################
 
-	def to_dict(self,include=None):
-		return {
+	def to_dict(self,include=None, complements=False, translator=None):
+		dct = {}
+		if complements:
+			dct = {complement: self.scalarizeInfo(value, complements=True) for complement, value in self.complements.items()}
+		dct.update({
 			name:attr.to_scalar() if attr.value is not None else None
 			for name,attr in self.attributes.items() if include is None or name in include
-		}
+		})
+		if translator is not None:
+			return {translator.get(k,k):v for k,v in dct.items()}
+		return dct
 
 	def name(self):
 		return getattr(self,'ENTITY_NAME',type(self).__name__)
@@ -168,4 +203,3 @@ class AutoCompleteEntity(Entity):
 		return f"""Auto Completed Entity {self.ENTITY_NAME}"""+((":\n\t"+"\n\t".join(attributes)) if len(self.attributes) > 0 else "")
 
 	#####################################################
-		

@@ -56,4 +56,20 @@ class DateOverBoundError(AttributeValueException):
 
 class DateBelowBoundError(AttributeValueException):
 	CODE = DATE_ERROR_CODE+"1"
+
+
+""" EmailAttribute Exceptions"""
+
+EMAIL_ERROR_CODE = "0x4"
+
+class WrongEmailFormat(AttributeValueException):
+	CODE = EMAIL_ERROR_CODE+"0"
+
+
+""" PhoneNumberAttribute Exceptions"""
+
+PHONE_NUMBER_ERROR_CODE = "0x5"
+
+class WrongPhoneNumberFormat(AttributeValueException):
+	CODE = PHONE_NUMBER_ERROR_CODE+"0"
 		

@@ -5,10 +5,13 @@ import traceback
 import random
 import base64
 import uuid
+import re
 
 ASCII_ALPHABET =  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 BASE16_ALPHABET = "abcdef0123456789"
 BASE64_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/="
+EMAIL_FORMAT = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+PHONE_NUNBER_FORMAT = r'^(\+|00)(?:[0-9] ?){6,14}[0-9]$'
 		
 class Attribute(object):
 	"""docstring for Attribute"""
@@ -90,6 +93,66 @@ class StringAttribute(Attribute):
 		for i in range(length):
 			str_ += ASCII_ALPHABET[random.randint(0,len(ASCII_ALPHABET)-1)]
 		return str_
+
+
+class EmailAttribute(StringAttribute):
+	"""docstring for EmailAttribute"""
+	def __init__(self, *args, **kwargs):
+		super(EmailAttribute, self).__init__(
+			*args, force_lower_case=kwargs.pop("force_lower_case",True), non_empty=kwargs.pop('non_empty',True), 
+			max_length=kwargs.pop("max_length",320),
+			**kwargs
+		)
+		self.check_value()
+
+	def check_value(self):
+		if super(EmailAttribute,self).check_value() is False:
+			return False
+		if self.value is not None:
+			if not re.fullmatch(EMAIL_FORMAT,self.value):
+				raise WrongEmailFormat(self,f"Value of EmailAttribute doesn't comply with email formats (email :{self.value})")
+
+	def set_value(self,value):
+		self.value = value
+		self.check_value()
+
+
+class PhoneNumberAttribute(StringAttribute):
+	"""docstring for PhoneNumberAttribute"""
+	def __init__(self, *args, default_country_code=None, **kwargs):
+		default_country_code = default_country_code.replace('+','') if type(default_country_code) is str else default_country_code
+		super(PhoneNumberAttribute, self).__init__(
+			*args, non_empty=kwargs.pop('non_empty',True), 
+			max_length=kwargs.pop("max_length",16),
+			force_cast=PhoneNumberAttribute.number_transformer(default_country_code),
+			**kwargs
+		)
+		self.check_value()
+
+	def check_value(self):
+		if super(PhoneNumberAttribute,self).check_value() is False:
+			return False
+		if self.value is not None:
+			if not re.fullmatch(PHONE_NUNBER_FORMAT,self.value):
+				raise WrongPhoneNumberFormat(self,f"Value of PhoneNumberAttribute doesn't comply with phone number formats (number :{self.value})")
+
+	def set_value(self,value):
+		self.value = value
+		self.check_value()
+
+	def number_transform(number,default_country_code=None):
+		if number is None:
+			return 
+		n = number.replace(' ','')
+		if n.startswith('00'):
+			n = "+"+n[2:]
+		if not n.startswith('+') and default_country_code is not None:
+			n = "+"+str(default_country_code)+n
+		return n
+
+	def number_transformer(country_code):
+		return lambda x:PhoneNumberAttribute.number_transform(default_country_code=country_code)
+
 
 
 class UUID4Attribute(StringAttribute):

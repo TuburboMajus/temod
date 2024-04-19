@@ -15,7 +15,7 @@ class MysqlAttributesTranslator(object):
 	def translate(attribute):
 		if attribute.value is None:
 			return "null"
-		if type(attribute) is StringAttribute:
+		if type(attribute) in [StringAttribute, EmailAttribute, PhoneNumberAttribute, UUID4Attribute]:
 			return MysqlAttributesTranslator.translateString(attribute)
 		elif type(attribute) is IntegerAttribute:
 			return MysqlAttributesTranslator.translateInteger(attribute)
@@ -27,8 +27,6 @@ class MysqlAttributesTranslator(object):
 			return MysqlAttributesTranslator.translateDate(attribute)
 		elif type(attribute) is DateTimeAttribute:
 			return MysqlAttributesTranslator.translateDatetime(attribute)
-		elif type(attribute) is UUID4Attribute:
-			return MysqlAttributesTranslator.translateString(attribute)
 		elif type(attribute) is UTF8BASE64Attribute:
 			return MysqlAttributesTranslator.translateBase64UTF8(attribute)
 		elif type(attribute) is RangeAttribute:

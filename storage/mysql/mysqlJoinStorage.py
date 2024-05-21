@@ -229,6 +229,20 @@ class MysqlJoinStorage(MysqlStorage):
 				i += 1
 			yield self.join_type(*to_join,**getattr(self.join_type,'SHORTCUTS',{}))
 
+
+	def count(self,*conditions,skip=None,entry=None,**kwargs):
+		entry = self.default_entry if (entry is None) else entry
+		condition = self._build_condition(entry, *conditions,**kwargs)
+		list_ = self._build_entities_list(entry)
+		entities = [list_[0]]+[entity[0] for entity in list_[1:]]
+		entities_names = [(entity.ENTITY_NAME if hasattr(entity,"ENTITY_NAME") else entity.__name__) for entity in entities]
+
+		query = f"SELECT count(*) as counted FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}"
+		if condition is not None:
+			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+
+		return self.getOne(query)['counted']
+
 	#############################################
 
 	def updateOnSnapshot(self,join,updateID=False):

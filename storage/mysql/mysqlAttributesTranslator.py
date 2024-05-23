@@ -1,5 +1,6 @@
 from temod.base.attribute import *
 
+import binascii
 import base64
 
 STRING_ESCAPE = str.maketrans({'"':  r'\"'})
@@ -17,6 +18,8 @@ class MysqlAttributesTranslator(object):
 			return "null"
 		if type(attribute) in [StringAttribute, EmailAttribute, PhoneNumberAttribute, UUID4Attribute]:
 			return MysqlAttributesTranslator.translateString(attribute)
+		if type(attribute) in [BytesAttribute, BCryptedAttribute]:
+			return MysqlAttributesTranslator.translateBytes(attribute)
 		elif type(attribute) is IntegerAttribute:
 			return MysqlAttributesTranslator.translateInteger(attribute)
 		elif type(attribute) is RealAttribute:
@@ -41,6 +44,9 @@ class MysqlAttributesTranslator(object):
 	def translateString(attribute):
 		return f'"{attribute.value.translate(STRING_ESCAPE)}"'
 
+	def translateBytes(attribute):
+		return f'0x{binascii.hexlify(attribute.value).decode()}'
+
 	def translateInteger(attribute):
 		return str(attribute.value)
 
@@ -62,5 +68,3 @@ class MysqlAttributesTranslator(object):
 
 	def translateBase64UTF8(attribute):
 		return f'"{base64.b64encode(attribute.value.encode()).decode("utf-8")}"'
-
-		

@@ -2,6 +2,7 @@ from datetime import datetime, date
 from temod.base.exceptions import *
 
 import traceback
+import bcrypt
 import random
 import base64
 import uuid
@@ -358,3 +359,59 @@ class RangeAttribute(IntegerAttribute):
 				return int(value)
 			except:
 				return self.reversed[value]
+
+
+class BytesAttribute(Attribute):
+	"""docstring for BytesAttribute"""
+	def __init__(self, name, non_empty=False,force_lower_case=False,length=None,max_length=None,min_length=None,**kwargs):
+		super(BytesAttribute, self).__init__(name, bytearray, **kwargs)
+		self.length = length
+		self.max_length = max_length if length is None else length
+		self.min_length = min_length if length is None else length
+		self.non_empty = non_empty
+		self.force_lower_case = force_lower_case
+		self.check_value()
+		if force_lower_case and self.value is not None:
+			self.value = self.value.lower()
+
+	def check_value(self):
+		if super(BytesAttribute,self).check_value() is False:
+			return False
+		if self.non_empty and self.value == b"":
+			raise EmptyStringError(self,"Value of non empty BytesAttribute set to null or empty bytes")
+		if self.value is not None and self.max_length is not None:
+			if len(self.value) > self.max_length:
+				raise OverMaxLengthError(
+					self,f"Value of BytesAttribute exceeds the max_length allowed. (value: {self.value}, max_length: {self.max_length})"
+				)
+		if self.value is not None and self.min_length is not None:
+			if len(self.value) < self.min_length:
+				raise BelowMinLengthError(
+					self,f"Value of BytesAttribute doesn't comply with the min_length needed. (value: {self.value}, max_length: {self.min_length})"
+				)
+
+
+class BCryptedAttribute(BytesAttribute):
+	"""docstring for BCryptedAttribute"""
+	def __init__(self, name, salt=None, encoding="utf-8", **kwargs):
+		super(BCryptedAttribute, self).__init__(name, **kwargs)
+		self.encoding = encoding
+		self.salt = salt
+
+	def set_value(self,value):
+		if type(value) is str:
+			if self.salt is None:
+				self.salt = bcrypt.gensalt()
+			self.value = bytearray(bcrypt.hashpw(value.encode(self.encoding), self.salt))
+		else:
+			self.value = value
+		self.check_value()
+
+	def __eq__(self, value):
+		if value is None:
+			return self.value is None
+		if type(value) is str:
+			return bcrypt.checkpw(value.encode(self.encoding), bytes(self.value))
+		elif issubclass(type(value),StringAttribute):
+			return (self.value is None and value.value is None) or bcrypt.checkpw(value.encode(self.encoding), bytes(self.value))
+		return False

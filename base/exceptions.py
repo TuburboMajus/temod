@@ -73,3 +73,12 @@ PHONE_NUMBER_ERROR_CODE = "0x5"
 class WrongPhoneNumberFormat(AttributeValueException):
 	CODE = PHONE_NUMBER_ERROR_CODE+"0"
 		
+
+
+""" EnumAttribute Exceptions"""
+
+ENUM_ERROR_CODE = "0x6"
+
+class UnknownValueError(AttributeValueException):
+	CODE = ENUM_ERROR_CODE+"0"
+		

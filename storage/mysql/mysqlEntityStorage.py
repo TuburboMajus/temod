@@ -126,9 +126,9 @@ class MysqlEntityStorage(MysqlStorage):
 			attr = attribute
 		else:
 			attr = self.entity_attributes[attribute]['type'](attribute)
-		attr.value = type(attr).generate_random_value()
-		while self.get(attr) is not None and unused:
-			attr.value = type(attr).generate_random_value()
+		attr.value = type(attr).generate_random_value(**self.entity_attributes[attribute])
+		while unused and self.get(attr) is not None:
+			attr.value = type(attr).generate_random_value(**self.entity_attributes[attribute])
 		return attr.value
 
 	##############################################

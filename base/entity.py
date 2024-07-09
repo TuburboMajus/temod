@@ -1,4 +1,5 @@
-from .attribute import Attribute
+from .attribute import Attribute, EnumAttribute
+import inspect
 
 class DuplicateNameError(Exception):
 	pass
@@ -87,6 +88,19 @@ class Entity(object):
 
 	def __setitem__(self,name,value): 
 		return self.setAttribute(name,value)
+
+	#####################################################
+
+	def enum(entity_type, attribute):
+		attr_names = [attr['name'] for attr in getattr(entity_type,"ATTRIBUTES",[])]
+		if not (attribute in attr_names):
+			raise Exception(f'Enum attribute {attribute} not found in Attribute names')
+		attr = [attr for attr in entity_type.ATTRIBUTES if attr['name'] == attribute][0]
+		if not issubclass(attr['type'], EnumAttribute):
+			raise Exception(f'{attribute} is not a valid Enum Attribute')
+		return attr['type'](
+			attr['name'],no_check=True,**{a:b for a,b in attr.items() if not (a in ['name','no_check','type','required'])}
+		).enum
 
 	#####################################################
 

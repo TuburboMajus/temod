@@ -1,5 +1,7 @@
-from datetime import datetime, date
+from datetime import datetime, date, time
 from temod.base.exceptions import *
+
+from enum import Enum 
 
 import traceback
 import bcrypt
@@ -60,7 +62,7 @@ class StringAttribute(Attribute):
 		self.min_length = min_length if length is None else length
 		self.non_empty = non_empty
 		self.force_lower_case = force_lower_case
-		self.check_value()
+		StringAttribute.set_value(self,self.value)
 		if force_lower_case and self.value is not None:
 			self.value = self.value.lower()
 
@@ -89,7 +91,9 @@ class StringAttribute(Attribute):
 	def to_scalar(self):
 		return self.value
 
-	def generate_random_value(length):
+	def generate_random_value(length=8,max_length=None,min_length=None, **kwargs):
+		if length is None:
+			length = random.randint(min_length if min_length is not None else 1,max_length)
 		str_ = ""
 		for i in range(length):
 			str_ += ASCII_ALPHABET[random.randint(0,len(ASCII_ALPHABET)-1)]
@@ -178,7 +182,7 @@ class UUID4Attribute(StringAttribute):
 		self.value = value
 		self.check_value()
 
-	def generate_random_value():
+	def generate_random_value(**kwargs):
 		return str(uuid.uuid4())
 
 
@@ -302,11 +306,31 @@ class DateAttribute(ClockAttribute):
 		if issubclass(type(value),str):
 			if value == "":
 				return None
-			return datetime.strptime(value).date()
+			return date.fromisoformat(value)
 		elif issubclass(type(value),datetime):
 			return value.date()
 		return value
 
+class TimeAttribute(ClockAttribute):
+	"""docstring for TimeAttribute"""
+	def __init__(self, name, **kwargs):
+		kwargs['force_cast'] = kwargs.get('force_cast',TimeAttribute.cast)
+		super(TimeAttribute, self).__init__(name,time,**kwargs)
+		self.check_value()
+
+	def set_value(self,value):
+		self.value = value
+		self.check_value()
+
+	def to_scalar(self):
+		return self.value.isoformat()
+
+	def cast(value):
+		if issubclass(type(value),str):
+			if value == "":
+				return None
+			return time.fromisoformat(value)
+		return value
 
 class DateTimeAttribute(ClockAttribute):
 	"""docstring for DateTimeAttribute"""
@@ -326,7 +350,7 @@ class DateTimeAttribute(ClockAttribute):
 		if issubclass(type(value),str):
 			if value == "":
 				return None
-			return datetime.strptime(value)
+			return datetime.fromisoformat(value)
 		return value
 		
 
@@ -361,17 +385,74 @@ class RangeAttribute(IntegerAttribute):
 				return self.reversed[value]
 
 
+class EnumAttribute(Attribute):
+	"""docstring for EnumAttribute"""
+	def __init__(self, name, values=None, **kwargs):
+		super(EnumAttribute, self).__init__(name, Enum, **kwargs)
+		self.enum = Enum(name, values if not values is None else [])
+		EnumAttribute.set_value(self,self.value)
+
+	def isSameEnum(enum1, enum2):
+		try:
+			if(len(enum1.__members__) != len(enum2.__members__)):
+				return False
+		except:
+			return False
+		for name, value in enum1.__members__.items():
+			try:
+				if name != enum2(value.value).name:
+					return False
+			except:
+				return False
+		return True
+
+	def set_value(self,value):
+		if(issubclass(type(value),str)):
+			try:
+				value = self.enum[value]
+			except:
+				try:
+					value = self.enum(int(value))
+				except:
+					raise UnknownValueError(f"Unknown value '{value}' for enum {self.name}")
+		elif (issubclass(type(value),int)):
+			try:
+				value = self.enum(int(value))
+			except:
+				raise UnknownValueError(f"Unknown value '{value}' for enum {self.name}")
+		self.value = value
+		if not issubclass(type(self.value),self.enum):
+			print(EnumAttribute.isSameEnum(self.enum, type(self.value)))
+			if EnumAttribute.isSameEnum(self.enum, type(self.value)):
+				self.value = self.enum(self.value.value)
+		self.check_value()
+
+	def check_value(self):
+		if super(EnumAttribute,self).check_value() is False:
+			return False
+		if self.value is not None and not issubclass(type(self.value),self.enum):
+			raise UnknownValueError(f"Unknown value '{self.value}' for enum {self.name}")
+
+	def to_scalar(self):
+		return self.value.value if self.value is not None else None
+
+
 class BytesAttribute(Attribute):
 	"""docstring for BytesAttribute"""
 	def __init__(self, name, non_empty=False,force_lower_case=False,length=None,max_length=None,min_length=None,**kwargs):
-		super(BytesAttribute, self).__init__(name, bytearray, **kwargs)
+		kwargs['force_cast'] = kwargs.get('force_cast',BytesAttribute.cast)
+		super(BytesAttribute, self).__init__(name, bytes, **kwargs)
 		self.length = length
 		self.max_length = max_length if length is None else length
 		self.min_length = min_length if length is None else length
 		self.non_empty = non_empty
 		self.force_lower_case = force_lower_case
+		BytesAttribute.set_value(self,self.value)
+
+	def set_value(self, value):
+		self.value = value
 		self.check_value()
-		if force_lower_case and self.value is not None:
+		if self.force_lower_case and self.value is not None:
 			self.value = self.value.lower()
 
 	def check_value(self):
@@ -390,6 +471,15 @@ class BytesAttribute(Attribute):
 					self,f"Value of BytesAttribute doesn't comply with the min_length needed. (value: {self.value}, max_length: {self.min_length})"
 				)
 
+	def to_scalar(self):
+		return self.value.decode()
+
+	def cast(value):
+		if issubclass(type(value), bytearray):
+			return bytes(value)
+		return value
+		
+
 
 class BCryptedAttribute(BytesAttribute):
 	"""docstring for BCryptedAttribute"""
@@ -402,7 +492,7 @@ class BCryptedAttribute(BytesAttribute):
 		if type(value) is str:
 			if self.salt is None:
 				self.salt = bcrypt.gensalt()
-			self.value = bytearray(bcrypt.hashpw(value.encode(self.encoding), self.salt))
+			self.value = bytes(bcrypt.hashpw(value.encode(self.encoding), self.salt))
 		else:
 			self.value = value
 		self.check_value()
@@ -415,3 +505,6 @@ class BCryptedAttribute(BytesAttribute):
 		elif issubclass(type(value),StringAttribute):
 			return (self.value is None and value.value is None) or bcrypt.checkpw(value.encode(self.encoding), bytes(self.value))
 		return False
+
+	def to_scalar(self):
+		return self.value.decode(self.encoding)

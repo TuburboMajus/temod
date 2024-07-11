@@ -52,6 +52,16 @@ class Attribute(object):
 	def decode(x):
 		return x
 
+	def compare(self,attribute):
+		if not issubclass(type(attribute),type(self)):
+			return False
+		return self.value == attribute.value
+
+	def shallow_copy(self):
+		copy = type(self)(self.name)
+		copy.value = self.value
+		return copy
+
 
 class StringAttribute(Attribute):
 	"""docstring for StringAttribute"""
@@ -406,22 +416,33 @@ class EnumAttribute(Attribute):
 				return False
 		return True
 
+	def compare(self,attribute):
+		if not issubclass(type(attribute),EnumAttribute):
+			return False
+
+		if not EnumAttribute.isSameEnum(self.enum,attribute.enum):
+			return False
+
+		print("comparing enums ",self.value, attribute.value)
+		return self.value.value == attribute.value.value
+
 	def set_value(self,value):
-		if(issubclass(type(value),str)):
+		if issubclass(type(value),str):
 			try:
 				value = self.enum[value]
 			except:
 				try:
 					value = self.enum(int(value))
 				except:
-					raise UnknownValueError(f"Unknown value '{value}' for enum {self.name}")
-		elif (issubclass(type(value),int)):
+					pass
+		elif issubclass(type(value),int):
 			try:
 				value = self.enum(int(value))
 			except:
-				raise UnknownValueError(f"Unknown value '{value}' for enum {self.name}")
+				pass
 		self.value = value
 		if not issubclass(type(self.value),self.enum):
+			print(self.enum, type(self.value),self.value)
 			print(EnumAttribute.isSameEnum(self.enum, type(self.value)))
 			if EnumAttribute.isSameEnum(self.enum, type(self.value)):
 				self.value = self.enum(self.value.value)
@@ -435,6 +456,12 @@ class EnumAttribute(Attribute):
 
 	def to_scalar(self):
 		return self.value.value if self.value is not None else None
+
+	def shallow_copy(self):
+		enum = EnumAttribute(self.name)
+		enum.enum = self.enum
+		enum.value = self.value
+		return enum
 
 
 class BytesAttribute(Attribute):

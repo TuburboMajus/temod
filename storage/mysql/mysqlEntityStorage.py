@@ -6,15 +6,11 @@ from .mysqlAttributesTranslator import MysqlAttributesTranslator
 from .mysqlConditionsTranslator import MysqlConditionsTranslator
 from .mysqlStorage import MysqlStorage
 
-from temod.storage.exceptions.entities import *
+from temod.storage.exceptions import *
 
 from copy import deepcopy
 
 import sys
-
-#############################################
-
-# EXCEPTIONS
 
 
 #############################################
@@ -142,7 +138,10 @@ class MysqlEntityStorage(MysqlStorage):
 
 		query = f"SELECT * FROM {self.entity_name}"
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return None
 
 		if orderby is not None:
 			query += f" ORDERBY {orderby}"
@@ -159,7 +158,10 @@ class MysqlEntityStorage(MysqlStorage):
 
 		query = f"DELETE FROM {self.entity_name}"
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return None
 
 		if not many:
 			limit = 1
@@ -205,7 +207,10 @@ class MysqlEntityStorage(MysqlStorage):
 			raise Exception("Updates must be a dict or an Attribute")
 		query = f"UPDATE {self.entity_name} SET {','.join([attribute.name+' = '+MysqlAttributesTranslator.translate(attribute) for attribute in attributes])}"
 		if condition is not None:
-			query +=  f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query +=  f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return None
 		if skip is not None:
 			query += f" SKIP {skip}"
 		if limit is not None:
@@ -216,7 +221,11 @@ class MysqlEntityStorage(MysqlStorage):
 		condition = self._build_condition(*conditions,**kwargs)
 		base = f'SELECT * FROM {self.entity_name}'
 		if condition is not None:
-			condition = MysqlConditionsTranslator.translate(condition)
+			try:
+				condition = MysqlConditionsTranslator.translate(condition)
+			except:
+				for fake in []:
+					yield fake
 		for row in self.searchMany(base,condition=condition,orderby=orderby,skip=skip,limit=limit):
 			yield self.entity_generator(row)
 
@@ -225,7 +234,10 @@ class MysqlEntityStorage(MysqlStorage):
 
 		query = f"SELECT count(*) as counted FROM {self.entity_name}"
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return 0
 
 		return self.getOne(query)['counted']
 
@@ -279,7 +291,7 @@ class MysqlEntityStorage(MysqlStorage):
 			raise EntitySnapshotException("No snapshot to recover data from")
 		updates = [
 			attribute for attribute in entity.attributes.values()
-			if entity.snapshot[attribute.name].value != attribute.value
+			if not (entity.snapshot[attribute.name].compare(attribute))
 		]
 		if len(updates) > 0:
 			return self.updateOne(entity,attributes=updates,updateID=updateID)

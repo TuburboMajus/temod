@@ -1,12 +1,10 @@
 from .mysqlAttributesTranslator import MysqlAttributesTranslator
+
+
+from temod.storage.exceptions import *
+
 from temod.base.condition import *
 from temod.base.attribute import *
-
-
-class MysqlConditionException(Exception):
-	"""docstring for MysqlConditionException"""
-	def __init__(self, *args, **kwargs):
-		super(MysqlConditionException, self).__init__(*args, **kwargs)
 
 
 class MysqlConditionsTranslator(object):
@@ -23,7 +21,7 @@ class MysqlConditionsTranslator(object):
 		if hasattr(MysqlConditionsTranslator,f"translate_{type(condition).__name__.lower()}"):
 			return getattr(MysqlConditionsTranslator,f"translate_{type(condition).__name__.lower()}")(condition)
 		else:
-			raise MysqlConditionException(f"Can't translate condition of type {type(condition).__name__}")
+			raise ConditionTranslatorException(f"Can't translate condition of type {type(condition).__name__}")
 
 	def translate_and(condition):
 		return " and ".join(["("+MysqlConditionsTranslator.translate(sub_condition)+")" for sub_condition in condition.conditions])
@@ -86,5 +84,7 @@ class MysqlConditionsTranslator(object):
 		return f'{MysqlConditionsTranslator.translate_field(condition.field)} BETWEEN {born1} AND {born2}'
 
 	def translate_in(condition):
+		if len(condition.values) == 0:
+			raise BeforeHandUnmatchedCondition()
 		return f"{MysqlConditionsTranslator.translate_field(condition.field)} in ({','.join([MysqlAttributesTranslator.translate(attr) for attr in condition.values])})"
 		

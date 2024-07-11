@@ -106,8 +106,7 @@ class Entity(object):
 
 	def takeSnapshot(self):
 		self.snapshot = {
-			name:type(attribute)(attribute.name,value=attribute.value)
-			for name,attribute in self.attributes.items()
+			name:attribute.shallow_copy() for name,attribute in self.attributes.items()
 		}
 		return self
 

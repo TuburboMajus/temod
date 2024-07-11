@@ -1,14 +1,11 @@
+from temod.storage.exceptions import *
+
 from temod.base.attribute import *
 
 import binascii
 import base64
 
 STRING_ESCAPE = str.maketrans({'"':  r'\"'})
-
-class MysqlAttributeException(Exception):
-	"""docstring for MysqlAttributeException"""
-	def __init__(self, *args, **kwargs):
-		super(MysqlAttributeException, self).__init__(*args, **kwargs)
 
 class MysqlAttributesTranslator(object):
 	"""docstring for MysqlAttributesTranslator"""
@@ -39,7 +36,7 @@ class MysqlAttributesTranslator(object):
 		elif type(attribute) is EnumAttribute:
 			return MysqlAttributesTranslator.translateEnum(attribute)
 		else:
-			raise MysqlAttributeException(f"Can't translate attribute of type {type(attribute).__name__}")
+			raise AttributeTranslatorException(f"Can't translate attribute of type {type(attribute).__name__}")
 
 	####################################
 	# BASIC TRANSLATORS

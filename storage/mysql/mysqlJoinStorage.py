@@ -8,7 +8,7 @@ from temod.base.condition import *
 from temod.base.entity import Entity
 from temod.base.join import Join
 
-from temod.storage.exceptions.joins import *
+from temod.storage.exceptions import *
 
 from copy import deepcopy
 
@@ -26,7 +26,10 @@ class MysqlJoinStorage(MysqlStorage):
 			raise JoinStorageException("The joined entity structure must be specified")
 
 		self.join_type = join_type
-		self.default_entry = getattr(join_type,'DEFAULT_ENTRY',join_type.STRUCTURE[0].attributes[0])
+		if hasattr(join_type,"DEFAULT_ENTRY"):
+			self.default_entry = join_type.DEFAULT_ENTRY
+		else:
+			self.default_entry = join_type.STRUCTURE[0].default_entry()
 
 		if not issubclass(self.default_entry,Entity):
 			raise JoinStorageException("join default entry must be a subclass of Entity")
@@ -71,16 +74,12 @@ class MysqlJoinStorage(MysqlStorage):
 		entities_list = [entry]
 		for constraint in self.join_type.STRUCTURE:
 			ctype =  "" if (constraint.multiplicity.start == 1 and constraint.multiplicity.end == 1) else "LEFT"
-			if not (constraint.attributes[0].owner_type in entities_list):
-				entities_list.append((
-					constraint.attributes[0].owner_type, constraint.condition(), ctype
-				))
-				continue
-			if not (constraint.attributes[1].owner_type in entities_list):
-				entities_list.append((
-					constraint.attributes[1].owner_type, constraint.condition(), ctype
-				))
-				continue
+			for entity in constraint.entities():
+				if not (entity in entities_list):
+					entities_list.append((
+						entity, constraint.condition(), ctype
+					))
+					break
 		return entities_list
 
 	def _build_attributes(self,class_,**attributes):
@@ -149,7 +148,10 @@ class MysqlJoinStorage(MysqlStorage):
 			FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}
 		"""
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return None
 		
 		result = self.getOne(query+" LIMIT 1")
 		if result is not None:
@@ -175,7 +177,11 @@ class MysqlJoinStorage(MysqlStorage):
 			FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}
 		"""
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+				result = self.getOne(query+" LIMIT 1")
+			except BeforeHandUnmatchedCondition:
+				result = None
 
 		result = self.getOne(query+" LIMIT 1")
 		if result is not None:
@@ -194,7 +200,10 @@ class MysqlJoinStorage(MysqlStorage):
 
 		query = f"DELETE {self._build_selection()} FROM {self.base_name} {self._build_join()}"
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return None
 		if not many:
 			query += " LIMIT 1"
 		return self.executeAndCommit(query).lastrowid
@@ -213,7 +222,11 @@ class MysqlJoinStorage(MysqlStorage):
 		"""
 
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				for fake in []:
+					yield fake
 
 		for row in self.searchMany(query,orderby=orderby,skip=skip,limit=limit):
 			to_join = []; i = 0
@@ -239,7 +252,10 @@ class MysqlJoinStorage(MysqlStorage):
 
 		query = f"SELECT count(*) as counted FROM {getattr(list_[0],'ENTITY_NAME',list_[0].__name__)} {self._build_join(list_[1:])}"
 		if condition is not None:
-			query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			try:
+				query += f" WHERE {MysqlConditionsTranslator.translate(condition)}"
+			except BeforeHandUnmatchedCondition:
+				return 0
 
 		return self.getOne(query)['counted']
 

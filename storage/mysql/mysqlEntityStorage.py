@@ -220,14 +220,19 @@ class MysqlEntityStorage(MysqlStorage):
 	def list(self,*conditions,orderby=None,skip=None,limit=None,**kwargs):
 		condition = self._build_condition(*conditions,**kwargs)
 		base = f'SELECT * FROM {self.entity_name}'
+		yield_fake = False
 		if condition is not None:
 			try:
 				condition = MysqlConditionsTranslator.translate(condition)
 			except:
-				for fake in []:
-					yield fake
-		for row in self.searchMany(base,condition=condition,orderby=orderby,skip=skip,limit=limit):
-			yield self.entity_generator(row)
+				yield_fake = True
+
+		if not yield_fake:
+			for row in self.searchMany(base,condition=condition,orderby=orderby,skip=skip,limit=limit):
+				yield self.entity_generator(row)
+		else:
+			for fake in []:
+				yield fake
 
 	def count(self,*conditions,skip=None,**kwargs):
 		condition = self._build_condition(*conditions,**kwargs)

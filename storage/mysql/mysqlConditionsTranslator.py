@@ -40,6 +40,22 @@ class MysqlConditionsTranslator(object):
 			condition.field.value = condition.field.value.lower()+"%"
 			return f"lower({MysqlConditionsTranslator.translate_field(condition.field)}) LIKE {MysqlAttributesTranslator.translate(condition.field)}"
 
+	def translate_endswith(condition):
+		if condition.case_sensitive:
+			condition.field.value = "%"+condition.field.value
+			return f"{MysqlConditionsTranslator.translate_field(condition.field)} LIKE {MysqlAttributesTranslator.translate(condition.field)}"
+		else:
+			condition.field.value = "%"+condition.field.value.lower()
+			return f"lower({MysqlConditionsTranslator.translate_field(condition.field)}) LIKE {MysqlAttributesTranslator.translate(condition.field)}"
+
+	def translate_contains(condition):
+		if condition.case_sensitive:
+			condition.field.value = "%"+condition.field.value+"%"
+			return f"{MysqlConditionsTranslator.translate_field(condition.field)} LIKE {MysqlAttributesTranslator.translate(condition.field)}"
+		else:
+			condition.field.value = "%"+condition.field.value.lower()+"%"
+			return f"lower({MysqlConditionsTranslator.translate_field(condition.field)}) LIKE {MysqlAttributesTranslator.translate(condition.field)}"
+
 	def translate_equals(condition):
 		if condition.field2 is None:
 			if condition.field1.value is None:

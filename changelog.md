@@ -1,5 +1,19 @@
 # Change Log
 
+## Version 2.2.2
+
+### ADDITIONS
+
+- Endswith, Contains: new conditions an StringAttributes 
+
+### FIXES
+
+- Fixing a bug when a condition returns an empty set
+
+### Authors
+
+- PyAxolotl
+
 ## Version 2.2.1
 
 ### ADDITIONS

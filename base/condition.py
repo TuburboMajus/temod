@@ -82,6 +82,21 @@ class StartsWith(Condition):
 		self.field = field
 		self.case_sensitive = case_sensitive
 
+class EndsWith(Condition):
+	"""docstring for EndsWith"""
+	def __init__(self,field,case_sensitive=True,**kwargs):
+		super(EndsWith, self).__init__(**kwargs)
+		self.field = field
+		self.case_sensitive = case_sensitive
+
+class Contains(Condition):
+	"""docstring for Contains"""
+	def __init__(self,field,case_sensitive=True,**kwargs):
+		super(Contains, self).__init__(**kwargs)
+		self.field = field
+		self.case_sensitive = case_sensitive
+
+
 #################################################
 
 class In(Condition):

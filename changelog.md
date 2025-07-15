@@ -1,16 +1,26 @@
 # Change Log
 
+## Version 2.2.3
+
+### FIXES
+
+- EnumAttribute: fixed comparison when one of the values is None
+
+### Contributors
+
+- PyAxolotl
+
 ## Version 2.2.2
 
 ### ADDITIONS
 
-- Endswith, Contains: new conditions an StringAttributes 
+- Endswith, Contains: new conditions on StringAttributes 
 
 ### FIXES
 
 - Fixing a bug when a condition returns an empty set
 
-### Authors
+### Contributors
 
 - PyAxolotl
 
@@ -29,7 +39,7 @@
 - Fixing a bug where an empty IN condition would be transformed to a malformed mysql query
 - Fixing bug where unchanged EnumAttributes where considered updated in snapshots
 
-### Authors
+### Contributors
 
 - PyAxolotl
 
@@ -46,6 +56,6 @@
 - Fixing a bug where BytesAttribute wouldn't load from database
 - Fixing a bug where StringAttibute wasn't able to generate a random value with the proper length
 
-### Authors
+### Contributors
 
 - PyAxolotl

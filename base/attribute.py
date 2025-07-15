@@ -423,8 +423,7 @@ class EnumAttribute(Attribute):
 		if not EnumAttribute.isSameEnum(self.enum,attribute.enum):
 			return False
 
-		print("comparing enums ",self.value, attribute.value)
-		return self.value.value == attribute.value.value
+		return (self.value is None and attribute.value is None) or (self.value is not None and attribute.value is not None and self.value.name == attribute.value.name)
 
 	def set_value(self,value):
 		if issubclass(type(value),str):
@@ -442,8 +441,6 @@ class EnumAttribute(Attribute):
 				pass
 		self.value = value
 		if not issubclass(type(self.value),self.enum):
-			print(self.enum, type(self.value),self.value)
-			print(EnumAttribute.isSameEnum(self.enum, type(self.value)))
 			if EnumAttribute.isSameEnum(self.enum, type(self.value)):
 				self.value = self.enum(self.value.value)
 		self.check_value()
@@ -455,7 +452,7 @@ class EnumAttribute(Attribute):
 			raise UnknownValueError(f"Unknown value '{self.value}' for enum {self.name}")
 
 	def to_scalar(self):
-		return self.value.value if self.value is not None else None
+		return self.value.name if self.value is not None else None
 
 	def shallow_copy(self):
 		enum = EnumAttribute(self.name)

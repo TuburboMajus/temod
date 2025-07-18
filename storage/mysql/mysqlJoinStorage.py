@@ -169,7 +169,7 @@ class MysqlJoinStorage(MysqlStorage):
 			return self.join_type(*to_join,**getattr(self.join_type,'SHORTCUTS',{}))
 
 	def create(self,join):
-		if not type(join) is self.join_type:
+		if not issubclass(type(join),self.join_type):
 			raise JoinStorageException(f'Cannot store {type(join)} into a MysqlJoinStorage of {self.join_type}')
 
 		query = f"""
@@ -262,7 +262,7 @@ class MysqlJoinStorage(MysqlStorage):
 	#############################################
 
 	def updateOnSnapshot(self,join,updateID=False):
-		if not type(join) is self.join_type:
+		if not issubclass(type(join),self.join_type):
 			raise JoinStorageException(f'Cannot store {type(join)} into a MysqlJoinStorage of {self.join_type}')
 
 		if any([not hasattr(entity,"snapshot") for entity in join.entities.values()]):

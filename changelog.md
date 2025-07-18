@@ -1,5 +1,19 @@
 # Change Log
 
+## Version 2.2.4
+
+### ADDITIONS
+
+- DateAttribute and DateTimeAttribute: now able to cast most of the know string formats to date or datetime attribute
+
+### FIXES
+
+- MysqlJoinStorage: A join storage can now accept subclasses of the original join_type
+
+### Contributors
+
+- PyAxolotl
+
 ## Version 2.2.3
 
 ### FIXES

@@ -86,7 +86,7 @@ class StringAttribute(Attribute):
 		if super(StringAttribute,self).check_value() is False:
 			return False
 		if self.non_empty and self.value == "":
-			raise EmptyStringError(self,"Value of non empty StringAttribute set to null or empty str")
+			raise EmptyStringError(self,f"Value of non empty StringAttribute {self.name} set to null or empty str")
 		if self.value is not None and self.max_length is not None:
 			if len(self.value) > self.max_length:
 				raise OverMaxLengthError(
@@ -313,13 +313,45 @@ class DateAttribute(ClockAttribute):
 		return self.value.isoformat()
 
 	def cast(value):
-		if issubclass(type(value),str):
-			if value == "":
+		if isinstance(value, str):
+			if value.strip() == "":
 				return None
-			return date.fromisoformat(value)
-		elif issubclass(type(value),datetime):
+
+			# Try ISO format first
+			try:
+				return date.fromisoformat(value)
+			except ValueError:
+				pass
+
+			# Known common date formats
+			known_formats = [
+				"%d/%m/%Y",      # 25/12/2023
+				"%Y/%m/%d",      # 2023/12/25
+				"%m/%d/%Y",      # 12/25/2023 (US)
+				"%d-%m-%Y",      # 25-12-2023
+				"%Y-%m-%d",      # 2023-12-25
+				"%B %d, %Y",     # December 25, 2023
+				"%b %d, %Y",     # Dec 25, 2023
+				"%d %B %Y",      # 25 December 2023
+				"%d %b %Y",      # 25 Dec 2023
+				"%Y.%m.%d",      # 2023.12.25
+				"%d.%m.%Y",      # 25.12.2023
+			]
+
+			for fmt in known_formats:
+				try:
+					return datetime.strptime(value, fmt).date()
+				except ValueError:
+					continue
+
+			raise ValueError(f"Unknown date format: {value}")
+
+		elif isinstance(value, datetime):
 			return value.date()
-		return value
+		elif isinstance(value, date):
+			return value
+
+		return value 
 
 class TimeAttribute(ClockAttribute):
 	"""docstring for TimeAttribute"""
@@ -357,10 +389,49 @@ class DateTimeAttribute(ClockAttribute):
 		return self.value.isoformat()
 
 	def cast(value):
-		if issubclass(type(value),str):
-			if value == "":
+		if isinstance(value, str):
+			
+			if value.strip() == "":
 				return None
-			return datetime.fromisoformat(value)
+
+			# Try ISO format first
+			try:
+				return datetime.fromisoformat(value)
+			except ValueError:
+				pass
+
+			# Common known datetime formats
+			known_formats = [
+				"%Y-%m-%d %H:%M:%S",        # 2023-12-25 14:30:00
+				"%Y-%m-%d %H:%M",           # 2023-12-25 14:30
+				"%d/%m/%Y %H:%M:%S",        # 25/12/2023 14:30:00
+				"%d/%m/%Y %H:%M",           # 25/12/2023 14:30
+				"%m/%d/%Y %H:%M:%S",        # 12/25/2023 14:30:00
+				"%m/%d/%Y %H:%M",           # 12/25/2023 14:30
+				"%d-%m-%Y %H:%M:%S",        # 25-12-2023 14:30:00
+				"%d-%m-%Y %H:%M",           # 25-12-2023 14:30
+				"%d.%m.%Y %H:%M:%S",        # 25.12.2023 14:30:00
+				"%d.%m.%Y %H:%M",           # 25.12.2023 14:30
+				"%Y/%m/%d %H:%M:%S",        # 2023/12/25 14:30:00
+				"%Y/%m/%d %H:%M",           # 2023/12/25 14:30
+				"%B %d, %Y %H:%M",          # December 25, 2023 14:30
+				"%b %d, %Y %H:%M",          # Dec 25, 2023 14:30
+				"%Y-%m-%dT%H:%M:%S",        # 2023-12-25T14:30:00
+				"%Y-%m-%dT%H:%M",           # 2023-12-25T14:30
+			]
+
+			for fmt in known_formats:
+				try:
+					return datetime.strptime(value, fmt)
+				except ValueError:
+					continue
+
+			try:
+				date = DateAttribute.cast(value)
+				date = datetime(date.year,date.month,date.day)
+			except:
+				raise ValueError(f"Unknown datetime format: {value}")
+
 		return value
 		
 
